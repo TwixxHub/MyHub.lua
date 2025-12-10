@@ -1,0 +1,252 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local LocalPlayer = Players.LocalPlayer
+
+-- // 1. CONFIGURATION & THEMES //
+local Key = "1234" -- Change this to your desired key
+local CurrentTheme = "Dark"
+
+local Themes = {
+    Dark = {
+        Main = Color3.fromRGB(35, 35, 35),
+        Sidebar = Color3.fromRGB(45, 45, 45),
+        Button = Color3.fromRGB(60, 60, 60),
+        Text = Color3.fromRGB(255, 255, 255),
+        TextBox = Color3.fromRGB(50, 50, 50)
+    },
+    Light = {
+        Main = Color3.fromRGB(240, 240, 240),
+        Sidebar = Color3.fromRGB(220, 220, 220),
+        Button = Color3.fromRGB(255, 255, 255),
+        Text = Color3.fromRGB(30, 30, 30),
+        TextBox = Color3.fromRGB(200, 200, 200)
+    }
+}
+
+-- // 2. GUI SETUP //
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "CheatGUI_Pro"
+ScreenGui.Parent = CoreGui
+ScreenGui.ResetOnSpawn = false
+
+-- Function to Round Corners
+local function AddCorner(instance, radius)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, radius or 8)
+    corner.Parent = instance
+end
+
+-- // 3. KEY SYSTEM UI //
+local KeyFrame = Instance.new("Frame")
+KeyFrame.Size = UDim2.new(0, 300, 0, 150)
+KeyFrame.Position = UDim2.new(0.5, -150, 0.5, -75)
+KeyFrame.BackgroundColor3 = Themes.Dark.Main
+KeyFrame.Parent = ScreenGui
+AddCorner(KeyFrame)
+
+local KeyTitle = Instance.new("TextLabel")
+KeyTitle.Size = UDim2.new(1, 0, 0, 40)
+KeyTitle.BackgroundTransparency = 1
+KeyTitle.Text = "SECURITY CHECK"
+KeyTitle.TextColor3 = Themes.Dark.Text
+KeyTitle.Font = Enum.Font.GothamBold
+KeyTitle.TextSize = 18
+KeyTitle.Parent = KeyFrame
+
+local KeyInput = Instance.new("TextBox")
+KeyInput.Size = UDim2.new(0.8, 0, 0, 40)
+KeyInput.Position = UDim2.new(0.1, 0, 0.4, 0)
+KeyInput.BackgroundColor3 = Themes.Dark.TextBox
+KeyInput.TextColor3 = Themes.Dark.Text
+KeyInput.PlaceholderText = "Enter Key..."
+KeyInput.Text = ""
+KeyInput.TextMasked = true -- [!] HIDES THE KEY (••••)
+KeyInput.Font = Enum.Font.Gotham
+KeyInput.TextSize = 14
+KeyInput.Parent = KeyFrame
+AddCorner(KeyInput)
+
+local SubmitBtn = Instance.new("TextButton")
+SubmitBtn.Size = UDim2.new(0.5, 0, 0, 35)
+SubmitBtn.Position = UDim2.new(0.25, 0, 0.75, 0)
+SubmitBtn.BackgroundColor3 = Themes.Dark.Button
+SubmitBtn.Text = "LOGIN"
+SubmitBtn.TextColor3 = Themes.Dark.Text
+SubmitBtn.Font = Enum.Font.GothamBold
+SubmitBtn.TextSize = 14
+SubmitBtn.Parent = KeyFrame
+AddCorner(SubmitBtn)
+
+-- // 4. MAIN INTERFACE (Hidden by default) //
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 500, 0, 300)
+MainFrame.Position = UDim2.new(0.5, -250, 0.5, -150)
+MainFrame.BackgroundColor3 = Themes.Dark.Main
+MainFrame.Visible = false
+MainFrame.Parent = ScreenGui
+AddCorner(MainFrame)
+
+-- Sidebar
+local Sidebar = Instance.new("Frame")
+Sidebar.Size = UDim2.new(0, 120, 1, 0)
+Sidebar.BackgroundColor3 = Themes.Dark.Sidebar
+Sidebar.Parent = MainFrame
+AddCorner(Sidebar)
+
+-- Container for Tab Buttons
+local TabContainer = Instance.new("UIListLayout")
+TabContainer.Parent = Sidebar
+TabContainer.Padding = UDim.new(0, 5)
+TabContainer.HorizontalAlignment = Enum.HorizontalAlignment.Center
+TabContainer.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- Content Area
+local ContentArea = Instance.new("Frame")
+ContentArea.Size = UDim2.new(1, -130, 1, -20)
+ContentArea.Position = UDim2.new(0, 130, 0, 10)
+ContentArea.BackgroundTransparency = 1
+ContentArea.Parent = MainFrame
+
+-- // 5. TAB LOGIC //
+local function CreateTab(name)
+    -- Tab Button
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(0.9, 0, 0, 40)
+    Btn.BackgroundColor3 = Themes.Dark.Button
+    Btn.Text = name
+    Btn.TextColor3 = Themes.Dark.Text
+    Btn.Font = Enum.Font.GothamBold
+    Btn.Parent = Sidebar
+    AddCorner(Btn)
+    
+    -- Tab Frame
+    local Frame = Instance.new("ScrollingFrame")
+    Frame.Size = UDim2.new(1, 0, 1, 0)
+    Frame.BackgroundTransparency = 1
+    Frame.Visible = false
+    Frame.Parent = ContentArea
+    Frame.ScrollBarThickness = 4
+    
+    -- List Layout for items inside the tab
+    local List = Instance.new("UIListLayout")
+    List.Parent = Frame
+    List.Padding = UDim.new(0, 10)
+    List.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    
+    -- Connect Button
+    Btn.MouseButton1Click:Connect(function()
+        for _, child in pairs(ContentArea:GetChildren()) do
+            if child:IsA("ScrollingFrame") then child.Visible = false end
+        end
+        Frame.Visible = true
+    end)
+    
+    return Frame
+end
+
+local MovementTab = CreateTab("Movement")
+local SettingsTab = CreateTab("Settings")
+
+-- // 6. THEME SWITCHER FUNCTION //
+local function SetTheme(themeName)
+    local t = Themes[themeName]
+    CurrentTheme = themeName
+    
+    -- Update Main Frames
+    MainFrame.BackgroundColor3 = t.Main
+    Sidebar.BackgroundColor3 = t.Sidebar
+    KeyFrame.BackgroundColor3 = t.Main
+    KeyInput.BackgroundColor3 = t.TextBox
+    
+    -- Update Text Colors recursively
+    for _, obj in pairs(ScreenGui:GetDescendants()) do
+        if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+            obj.TextColor3 = t.Text
+            if obj:IsA("TextButton") and obj.Name ~= "Close" then
+                obj.BackgroundColor3 = t.Button
+            end
+        end
+    end
+end
+
+-- // 7. INVISIBLE MODE LOGIC //
+local invisibleConn
+local function ToggleInvisible(bool)
+    if bool then
+        invisibleConn = RunService.RenderStepped:Connect(function()
+            if LocalPlayer.Character then
+                for _, v in pairs(LocalPlayer.Character:GetDescendants()) do
+                    if v:IsA("BasePart") then
+                        v.Transparency = 1
+                        v.CanCollide = false
+                    elseif v:IsA("Decal") then
+                        v.Transparency = 1
+                    end
+                end
+            end
+        end)
+    else
+        if invisibleConn then invisibleConn:Disconnect() end
+        if LocalPlayer.Character then
+            for _, v in pairs(LocalPlayer.Character:GetDescendants()) do
+                if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then
+                    v.Transparency = 0
+                    v.CanCollide = true
+                elseif v:IsA("Decal") then
+                    v.Transparency = 0
+                end
+            end
+        end
+    end
+end
+
+-- // 8. BUTTONS & FEATURES //
+
+-- [Movement] Invisible Button
+local InvisBtn = Instance.new("TextButton")
+InvisBtn.Size = UDim2.new(0.9, 0, 0, 40)
+InvisBtn.BackgroundColor3 = Themes.Dark.Button
+InvisBtn.Text = "Invisible Mode: OFF"
+InvisBtn.Parent = MovementTab
+AddCorner(InvisBtn)
+
+local isInvis = false
+InvisBtn.MouseButton1Click:Connect(function()
+    isInvis = not isInvis
+    InvisBtn.Text = isInvis and "Invisible Mode: ON" or "Invisible Mode: OFF"
+    ToggleInvisible(isInvis)
+end)
+
+-- [Settings] Dark Mode
+local DarkBtn = Instance.new("TextButton")
+DarkBtn.Size = UDim2.new(0.9, 0, 0, 40)
+DarkBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+DarkBtn.Text = "Switch to Dark Mode"
+DarkBtn.Parent = SettingsTab
+AddCorner(DarkBtn)
+
+DarkBtn.MouseButton1Click:Connect(function() SetTheme("Dark") end)
+
+-- [Settings] Light Mode
+local LightBtn = Instance.new("TextButton")
+LightBtn.Size = UDim2.new(0.9, 0, 0, 40)
+LightBtn.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+LightBtn.Text = "Switch to Light Mode"
+LightBtn.TextColor3 = Color3.new(0,0,0) -- Force black text for this specific button
+LightBtn.Parent = SettingsTab
+AddCorner(LightBtn)
+
+LightBtn.MouseButton1Click:Connect(function() SetTheme("Light") end)
+
+-- // 9. KEY SUBMISSION LOGIC //
+SubmitBtn.MouseButton1Click:Connect(function()
+    if KeyInput.Text == Key then
+        KeyFrame.Visible = false
+        MainFrame.Visible = true
+    else
+        KeyInput.Text = "Incorrect Key"
+        task.wait(1)
+        KeyInput.Text = ""
+    end
+end)
